@@ -7,6 +7,7 @@ import {
   Image,
   ActivityIndicator,
   StyleSheet,
+  Text,
 } from 'react-native';
 import axios from 'axios';
 import { Snackbar } from 'react-native-paper';
@@ -20,11 +21,13 @@ export default function SearchScreen() {
   const [imageUrls, setImageUrls] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [snackbarVisible, setSnackbarVisible] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
 
   const fetchImages = async () => {
-    if (!searchQuery.trim()) return; // avoid searching for empty strings
+    if (!searchQuery.trim()) return;
 
     setIsLoading(true);
+    setHasSearched(true);
 
     try {
       const url = `${BASE_URL}&api_key=${API_KEY}&format=json&nojsoncallback=1&extras=url_s&text=${encodeURIComponent(
@@ -56,9 +59,17 @@ export default function SearchScreen() {
         onSubmitEditing={fetchImages}
       />
 
-      <Button title="Search" onPress={fetchImages} />
+      <Button
+        title={isLoading ? 'Searching...' : 'Search'}
+        onPress={fetchImages}
+        disabled={isLoading}
+      />
 
       {isLoading && <ActivityIndicator size="large" style={styles.loader} />}
+
+      {!isLoading && hasSearched && imageUrls.length === 0 && (
+        <Text style={styles.emptyText}>No images found for “{searchQuery}”.</Text>
+      )}
 
       <FlatList
         data={imageUrls}
@@ -107,5 +118,11 @@ const styles = StyleSheet.create({
   },
   list: {
     paddingBottom: 20,
+  },
+  emptyText: {
+    textAlign: 'center',
+    color: '#777',
+    fontSize: 16,
+    marginTop: 20,
   },
 });
