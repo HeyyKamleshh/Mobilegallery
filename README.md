@@ -72,7 +72,10 @@ npx expo start
 
 
 ![image](https://github.com/user-attachments/assets/29e2f562-ba85-495b-a3f0-504523ecfcfc)
+
 ![image](https://github.com/user-attachments/assets/4519d466-68f1-4528-8323-37542e1ae362)
+
+
 ![image](https://github.com/user-attachments/assets/a80b6052-b369-41df-8889-d752be593013)
 
 
