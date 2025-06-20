@@ -21,8 +21,8 @@ const BASE_URL = 'https://api.flickr.com/services/rest/?method=flickr.photos.sea
 const IMAGES_PER_PAGE = 20;
 
 export default function SearchScreen() {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [imageUrls, setImageUrls] = useState([]);
+  const [query, setQuery] = useState('');
+  const [images, setImages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
@@ -31,64 +31,80 @@ export default function SearchScreen() {
 
   useEffect(() => {
     loadRecentSearches();
-    loadFavorites();
+    loadFavoriteImages();
   }, []);
 
-  const saveRecentSearch = async (query) => {
+  // Load  searched from storage
+  const loadRecentSearches = async () => {
+    try {
+      const saved = await AsyncStorage.getItem('recentSearches');
+      if (saved) setRecentSearches(JSON.parse(saved));
+    } catch (err) {
+      console.error('Error loading recent searches:', err);
+    }
+  };
+
+  // Save current search
+  const saveSearchToHistory = async (text) => {
     try {
       const existing = await AsyncStorage.getItem('recentSearches');
       let history = existing ? JSON.parse(existing) : [];
-      history = [query, ...history.filter(item => item !== query)];
+      history = [text, ...history.filter(item => item !== text)];
       if (history.length > 5) history = history.slice(0, 5);
+
       await AsyncStorage.setItem('recentSearches', JSON.stringify(history));
       setRecentSearches(history);
     } catch (err) {
-      console.error('Error saving recent search', err);
+      console.error('Failed to save search:', err);
     }
   };
 
-  const loadRecentSearches = async () => {
-    const saved = await AsyncStorage.getItem('recentSearches');
-    if (saved) setRecentSearches(JSON.parse(saved));
+  // Load saved fav
+  const loadFavoriteImages = async () => {
+    try {
+      const stored = await AsyncStorage.getItem('favorites');
+      if (stored) setFavorites(JSON.parse(stored));
+    } catch (err) {
+      console.error('Error loading favorites:', err);
+    }
   };
 
-  const loadFavorites = async () => {
-    const stored = await AsyncStorage.getItem('favorites');
-    if (stored) setFavorites(JSON.parse(stored));
-  };
-
+  // Toggle a single image as favorite/unfavorite
   const toggleFavorite = async (url) => {
-    let updated;
-    if (favorites.includes(url)) {
-      updated = favorites.filter(item => item !== url);
-    } else {
-      updated = [...favorites, url];
-    }
+    const updated =
+      favorites.includes(url)
+        ? favorites.filter(item => item !== url)
+        : [...favorites, url];
+
     setFavorites(updated);
     await AsyncStorage.setItem('favorites', JSON.stringify(updated));
   };
 
   const isFavorite = (url) => favorites.includes(url);
 
-  const fetchImages = async (customQuery = null) => {
-    if (!searchQuery.trim()) return;
+  // Main search function
+  const performSearch = async (searchTermFromRecent = null) => {
+    const searchTerm = searchTermFromRecent || query;
+    if (!searchTerm.trim()) return;
 
+    setQuery(searchTerm);
     setIsLoading(true);
     setHasSearched(true);
-    await saveRecentSearch(searchQuery);;
+
+    await saveSearchToHistory(searchTerm);
+
+    const url = `${BASE_URL}&api_key=${API_KEY}&format=json&nojsoncallback=1&extras=url_s&text=${encodeURIComponent(
+      searchTerm
+    )}&per_page=${IMAGES_PER_PAGE}`;
 
     try {
-      const url = `${BASE_URL}&api_key=${API_KEY}&format=json&nojsoncallback=1&extras=url_s&text=${encodeURIComponent(
-        searchQuery
-      )}&per_page=${IMAGES_PER_PAGE}`;
-
       const response = await axios.get(url);
       const photoData = response?.data?.photos?.photo || [];
       const urls = photoData.map(photo => photo.url_s).filter(Boolean);
 
-      setImageUrls(urls);
-    } catch (error) {
-      console.error('Error fetching images:', error.message);
+      setImages(urls);
+    } catch (err) {
+      console.error('Search error:', err.message);
       setSnackbarVisible(true);
     } finally {
       setIsLoading(false);
@@ -113,23 +129,34 @@ export default function SearchScreen() {
 
   return (
     <View style={styles.container}>
+      {/* Search Input */}
       <TextInput
         placeholder="Search for images..."
-        value={searchQuery}
-        onChangeText={setSearchQuery}
+        value={query}
+        onChangeText={setQuery}
         style={styles.input}
         returnKeyType="search"
-        onSubmitEditing={() => fetchImages()}
+        onSubmitEditing={() => performSearch()}
       />
 
-      <Button title={isLoading ? 'Searching...' : 'Search'} onPress={fetchImages} disabled={isLoading} />
+      {/* Search Button */}
+      <Button
+        title={isLoading ? 'Searching...' : 'Search'}
+        onPress={() => performSearch()}
+        disabled={isLoading}
+      />
 
+      {/* Recent Searches */}
       {recentSearches.length > 0 && (
         <View style={styles.historyContainer}>
           <Text style={styles.historyTitle}>Recent Searches:</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             {recentSearches.map((item, index) => (
-              <TouchableOpacity key={index} onPress={() => fetchImages(item)} style={styles.historyTag}>
+              <TouchableOpacity
+                key={index}
+                style={styles.historyTag}
+                onPress={() => performSearch(item)}
+              >
                 <Text style={styles.historyText}>{item}</Text>
               </TouchableOpacity>
             ))}
@@ -137,15 +164,17 @@ export default function SearchScreen() {
         </View>
       )}
 
+     
       {isLoading && <ActivityIndicator size="large" style={styles.loader} />}
 
-      {!isLoading && hasSearched && imageUrls.length === 0 && (
-        <Text style={styles.emptyText}>No images found for “{searchQuery}”.</Text>
+      
+      {!isLoading && hasSearched && images.length === 0 && (
+        <Text style={styles.emptyText}>No results for “{query}”.</Text>
       )}
 
       <FlatList
-        data={imageUrls}
-        keyExtractor={(uri, index) => uri + index}
+        data={images}
+        keyExtractor={(uri, index) => `${uri}_${index}`}
         renderItem={renderImageItem}
         contentContainerStyle={styles.list}
       />
@@ -156,21 +185,40 @@ export default function SearchScreen() {
         duration={3000}
         action={{
           label: 'Retry',
-          onPress: () => fetchImages(),
+          onPress: () => performSearch(),
         }}
       >
-        Unable to load images. Please check your connection.
+        Unable to load images. Please check your internet connection.
       </Snackbar>
     </View>
   );
 }
 
+
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 12, backgroundColor: '#fff' },
-  input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 6, padding: 10, marginBottom: 10 },
-  loader: { marginVertical: 16 },
-  imageWrapper: { position: 'relative', marginBottom: 12 },
-  image: { height: 200, borderRadius: 8 },
+  container: {
+    flex: 1,
+    padding: 12,
+    backgroundColor: '#fff',
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 6,
+    padding: 10,
+    marginBottom: 10,
+  },
+  loader: {
+    marginVertical: 16,
+  },
+  imageWrapper: {
+    position: 'relative',
+    marginBottom: 12,
+  },
+  image: {
+    height: 200,
+    borderRadius: 8,
+  },
   favoriteIcon: {
     position: 'absolute',
     right: 15,
@@ -179,10 +227,23 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 4,
   },
-  list: { paddingBottom: 20 },
-  emptyText: { textAlign: 'center', color: '#777', fontSize: 16, marginTop: 20 },
-  historyContainer: { marginBottom: 12 },
-  historyTitle: { fontWeight: 'bold', marginBottom: 6, color: '#333' },
+  list: {
+    paddingBottom: 20,
+  },
+  emptyText: {
+    textAlign: 'center',
+    color: '#777',
+    fontSize: 16,
+    marginTop: 20,
+  },
+  historyContainer: {
+    marginBottom: 12,
+  },
+  historyTitle: {
+    fontWeight: 'bold',
+    marginBottom: 6,
+    color: '#333',
+  },
   historyTag: {
     backgroundColor: '#eee',
     paddingHorizontal: 12,
@@ -190,5 +251,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     marginRight: 8,
   },
-  historyText: { color: '#555' },
+  historyText: {
+    color: '#555',
+  },
 });

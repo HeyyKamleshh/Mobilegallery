@@ -5,7 +5,6 @@ import {
   Image,
   ActivityIndicator,
   Text,
-  Button,
   StyleSheet,
   TouchableOpacity,
 } from 'react-native';
@@ -18,86 +17,93 @@ const BASE_URL = 'https://api.flickr.com/services/rest/';
 const IMAGES_PER_PAGE = 20;
 
 const HomeScreen = ({ navigation }) => {
-  const [imageUrls, setImageUrls] = useState([]);
+  const [images, setImages] = useState([]);
   const [favorites, setFavorites] = useState([]);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [page, setPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
-  const [hasMoreImages, setHasMoreImages] = useState(true);
+  const [hasMore, setHasMore] = useState(true);
 
   useEffect(() => {
-    fetchImages(1, true);
-    loadFavorites();
+    fetchRecentImages(1, true);
+    loadFavoriteImages();
   }, []);
 
-  const buildApiUrl = (page) =>
-    `${BASE_URL}?method=flickr.photos.getRecent&per_page=${IMAGES_PER_PAGE}&page=${page}&api_key=${API_KEY}&format=json&nojsoncallback=1&extras=url_s`;
+  // Builds the Flickr API
+  const buildFlickrApiUrl = (pageNumber) =>
+    `${BASE_URL}?method=flickr.photos.getRecent&per_page=${IMAGES_PER_PAGE}&page=${pageNumber}&api_key=${API_KEY}&format=json&nojsoncallback=1&extras=url_s`;
 
-  const fetchImages = async (page = 1, isInitialLoad = false) => {
+  // Fetch recent images
+  const fetchRecentImages = async (pageNumber = 1, isInitial = false) => {
     if (isLoading) return;
-    setIsLoading(true);
 
+    setIsLoading(true);
     try {
-      const response = await axios.get(buildApiUrl(page));
-      const fetchedImages = response?.data?.photos?.photo
+      const response = await axios.get(buildFlickrApiUrl(pageNumber));
+      const fetched = response?.data?.photos?.photo
         ?.map(photo => photo.url_s)
         .filter(Boolean) || [];
 
-      if (fetchedImages.length === 0) {
-        setHasMoreImages(false);
+      if (fetched.length === 0) {
+        setHasMore(false);
       }
 
-      const updatedImages = page === 1
-        ? fetchedImages
-        : [...imageUrls, ...fetchedImages];
+      const updatedImages = pageNumber === 1
+        ? fetched
+        : [...images, ...fetched];
 
-      setImageUrls(updatedImages);
+      setImages(updatedImages);
 
-      if (page === 1) {
-        await AsyncStorage.setItem('cachedImages', JSON.stringify(fetchedImages));
+      // Cache only the first page
+      if (pageNumber === 1) {
+        await AsyncStorage.setItem('cachedImages', JSON.stringify(fetched));
       }
 
-      setCurrentPage(page);
+      setPage(pageNumber);
       setHasError(false);
     } catch (error) {
       setHasError(true);
-      console.warn('Error fetching images:', error.message);
+      console.warn('Failed to fetch images:', error.message);
 
-      // Try to load cached images
-      if (page === 1) {
-        const cachedImages = await AsyncStorage.getItem('cachedImages');
-        if (cachedImages) {
-          setImageUrls(JSON.parse(cachedImages));
+      if (pageNumber === 1) {
+        const cached = await AsyncStorage.getItem('cachedImages');
+        if (cached) {
+          setImages(JSON.parse(cached));
         }
       }
     } finally {
       setIsLoading(false);
-      if (isInitialLoad) setInitialLoading(false);
+      if (isInitial) setInitialLoading(false);
     }
   };
 
-  const loadFavorites = async () => {
-    const stored = await AsyncStorage.getItem('favorites');
-    if (stored) setFavorites(JSON.parse(stored));
+  // Load favorite URLs from AsyncStorage
+  const loadFavoriteImages = async () => {
+    try {
+      const stored = await AsyncStorage.getItem('favorites');
+      if (stored) setFavorites(JSON.parse(stored));
+    } catch (error) {
+      console.warn('Failed to load favorites:', error.message);
+    }
   };
 
+  // Toggle favorite/unfavorite
   const toggleFavorite = async (url) => {
-    let updated;
-    if (favorites.includes(url)) {
-      updated = favorites.filter(item => item !== url);
-    } else {
-      updated = [...favorites, url];
-    }
+    const updated =
+      favorites.includes(url)
+        ? favorites.filter(item => item !== url)
+        : [...favorites, url];
+
     setFavorites(updated);
     await AsyncStorage.setItem('favorites', JSON.stringify(updated));
   };
 
   const isFavorite = (url) => favorites.includes(url);
 
-  const loadMoreImages = () => {
-    if (!isLoading && hasMoreImages) {
-      fetchImages(currentPage + 1);
+  const handleLoadMore = () => {
+    if (!isLoading && hasMore) {
+      fetchRecentImages(page + 1);
     }
   };
 
@@ -117,37 +123,38 @@ const HomeScreen = ({ navigation }) => {
     </View>
   );
 
-  const renderListFooter = () => (
-    isLoading ? <ActivityIndicator size="large" style={styles.loader} /> : null
-  );
+  const renderFooter = () =>
+    isLoading ? <ActivityIndicator size="large" style={styles.loader} /> : null;
 
   return (
     <View style={styles.container}>
+      {/* Top Navigation Bar */}
       <View style={styles.navBar}>
-  <Text style={styles.navTitle}>Home</Text>
-  <View style={styles.navLinks}>
-    <TouchableOpacity onPress={() => navigation.navigate('Search')}>
-      <Text style={styles.navLink}>Search</Text>
-    </TouchableOpacity>
-    <TouchableOpacity onPress={() => navigation.navigate('Favorites')}>
-      <Text style={styles.navLink}>Favorites</Text>
-    </TouchableOpacity>
-  </View>
-</View>
+        <Text style={styles.navTitle}>Home</Text>
+        <View style={styles.navLinks}>
+          <TouchableOpacity onPress={() => navigation.navigate('Search')}>
+            <Text style={styles.navLink}>Search</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => navigation.navigate('Favorites')}>
+            <Text style={styles.navLink}>Favorites</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
 
-
+      {/* Main Content */}
       {initialLoading ? (
-        <ActivityIndicator style={styles.loader} size="large" />
-      ) : imageUrls.length === 0 ? (
+        <ActivityIndicator size="large" style={styles.loader} />
+      ) : images.length === 0 ? (
         <Text style={styles.emptyText}>No images found.</Text>
       ) : (
         <FlatList
-          data={imageUrls}
+          data={images}
           keyExtractor={(item, index) => `${item}_${index}`}
           renderItem={renderImageItem}
-          onEndReached={loadMoreImages}
+          onEndReached={handleLoadMore}
           onEndReachedThreshold={0.5}
-          ListFooterComponent={renderListFooter}
+          ListFooterComponent={renderFooter}
+          contentContainerStyle={styles.list}
         />
       )}
 
@@ -166,9 +173,32 @@ const styles = StyleSheet.create({
     paddingTop: 40,
     backgroundColor: '#fff',
   },
+  navBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: '#f0f0f0',
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
+  },
+  navTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  navLinks: {
+    flexDirection: 'row',
+  },
+  navLink: {
+    marginLeft: 20,
+    fontSize: 16,
+    color: '#007BFF',
+    fontWeight: '600',
+  },
   imageWrapper: {
-    margin: 10,
     position: 'relative',
+    margin: 10,
   },
   image: {
     height: 200,
@@ -183,7 +213,7 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   loader: {
-    marginTop: 20,
+    marginVertical: 20,
   },
   errorText: {
     textAlign: 'center',
@@ -197,28 +227,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     padding: 20,
   },
-  navBar: {
-  flexDirection: 'row',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  paddingHorizontal: 16,
-  paddingVertical: 10,
-  backgroundColor: '#f0f0f0',
-  borderBottomWidth: 1,
-  borderBottomColor: '#ccc',
-},
-navTitle: {
-  fontSize: 18,
-  fontWeight: 'bold',
-},
-navLinks: {
-  flexDirection: 'row',
-},
-navLink: {
-  marginLeft: 20,
-  fontSize: 16,
-  color: '#007BFF',
-  fontWeight: '600',
-},
-
+  list: {
+    paddingBottom: 20,
+  },
 });
