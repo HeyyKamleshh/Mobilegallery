@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useLayoutEffect } from 'react';
 import {
   View,
   TextInput,
@@ -20,7 +20,7 @@ const API_KEY = '6f102c62f41998d151e5a1b48713cf13';
 const BASE_URL = 'https://api.flickr.com/services/rest/?method=flickr.photos.search';
 const IMAGES_PER_PAGE = 20;
 
-export default function SearchScreen() {
+export default function SearchScreen({ navigation }) {
   const [query, setQuery] = useState('');
   const [images, setImages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -28,6 +28,18 @@ export default function SearchScreen() {
   const [hasSearched, setHasSearched] = useState(false);
   const [recentSearches, setRecentSearches] = useState([]);
   const [favorites, setFavorites] = useState([]);
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerShown: true,
+      headerLeft: () => (
+        <TouchableOpacity onPress={() => navigation.openDrawer()} style={{ marginLeft: 15 }}>
+          <Icon name="menu" size={26} />
+        </TouchableOpacity>
+      ),
+      title: 'Search',
+    });
+  }, [navigation]);
 
   useEffect(() => {
     loadRecentSearches();

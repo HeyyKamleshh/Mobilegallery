@@ -1,4 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useLayoutEffect} from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+
 import {
   View,
   FlatList,
@@ -8,13 +11,24 @@ import {
   Text,
   TouchableOpacity,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
-export default function FavoritesScreen() {
+
+export default function FavoritesScreen({ navigation }) {
   const [favoriteImages, setFavoriteImages] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  
 
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerShown: true,
+      headerLeft: () => (
+        <TouchableOpacity onPress={() => navigation.openDrawer()} style={{ marginLeft: 15 }}>
+          <Icon name="menu" size={26} />
+        </TouchableOpacity>
+      ),
+      title: 'Favorites',
+    });
+  }, [navigation]);
   // Load fav images
   const fetchFavoriteImages = async () => {
     try {

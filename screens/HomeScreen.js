@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useLayoutEffect } from 'react';
+
 import {
   View,
   FlatList,
@@ -24,6 +25,18 @@ const HomeScreen = ({ navigation }) => {
   const [initialLoading, setInitialLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+
+ useLayoutEffect(() => {
+    navigation.setOptions({
+      headerShown: true,
+      title: 'Home',
+      headerLeft: () => (
+        <TouchableOpacity onPress={() => navigation.openDrawer()} style={{ marginLeft: 15 }}>
+          <Icon name="menu" size={26} />
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation]);
 
   useEffect(() => {
     fetchRecentImages(1, true);
@@ -129,7 +142,7 @@ const HomeScreen = ({ navigation }) => {
   return (
     <View style={styles.container}>
       {/* Top Navigation Bar */}
-      <View style={styles.navBar}>
+      {/* <View style={styles.navBar}>
         <Text style={styles.navTitle}>Home</Text>
         <View style={styles.navLinks}>
           <TouchableOpacity onPress={() => navigation.navigate('Search')}>
@@ -139,7 +152,7 @@ const HomeScreen = ({ navigation }) => {
             <Text style={styles.navLink}>Favorites</Text>
           </TouchableOpacity>
         </View>
-      </View>
+      </View> */}
 
       {/* Main Content */}
       {initialLoading ? (
@@ -170,32 +183,32 @@ export default HomeScreen;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingTop: 40,
+    paddingTop: 5,
     backgroundColor: '#fff',
   },
-  navBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    backgroundColor: '#f0f0f0',
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
-  },
-  navTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  navLinks: {
-    flexDirection: 'row',
-  },
-  navLink: {
-    marginLeft: 20,
-    fontSize: 16,
-    color: '#007BFF',
-    fontWeight: '600',
-  },
+  // navBar: {
+  //   flexDirection: 'row',
+  //   justifyContent: 'space-between',
+  //   alignItems: 'center',
+  //   paddingHorizontal: 16,
+  //   paddingVertical: 10,
+  //   backgroundColor: '#f0f0f0',
+  //   borderBottomWidth: 1,
+  //   borderBottomColor: '#ccc',
+  // },
+  // navTitle: {
+  //   fontSize: 18,
+  //   fontWeight: 'bold',
+  // },
+  // navLinks: {
+  //   flexDirection: 'row',
+  // },
+  // navLink: {
+  //   marginLeft: 20,
+  //   fontSize: 16,
+  //   color: '#007BFF',
+  //   fontWeight: '600',
+  // },
   imageWrapper: {
     position: 'relative',
     margin: 10,
