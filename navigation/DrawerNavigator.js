@@ -14,6 +14,7 @@ export default function DrawerNavigator() {
       initialRouteName="Home"
       screenOptions={{
         headerShown: false, 
+
       }}
     >
       <Drawer.Screen
@@ -35,6 +36,13 @@ export default function DrawerNavigator() {
         component={getScreenComponent('Favorites')}
         options={{ drawerIcon: ({ color, size }) => (
           <Ionicons name="heart-outline" size={size} color={color} />
+        )}}
+      />
+      <Drawer.Screen
+        name="Profile"
+        component={getScreenComponent('Profile')}
+        options={{ drawerIcon: ({ color, size }) => (
+          <Ionicons name="person-outline" size={size} color={color} />
         )}}
       />
     </Drawer.Navigator>
