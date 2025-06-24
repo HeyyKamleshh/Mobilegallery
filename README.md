@@ -1,6 +1,6 @@
 # 📸 Image Gallery App (React Native + Flickr API)
 
-A mobile image gallery app built with **React Native** and **Flickr API**, featuring recent image browsing, search functionality, offline caching, favorites, and recent search history — all with clean UI and smooth navigation.
+A mobile image gallery app built using **React Native** and the **Flickr API**, enhanced with **Drawer and Bottom Tab Navigation**, along with a fully editable **User Profile** section. The app supports recent image browsing, keyword-based search, offline caching, favorites, and recent search history — all wrapped in a clean UI with smooth navigation.
 
 ---
 
@@ -11,22 +11,27 @@ A mobile image gallery app built with **React Native** and **Flickr API**, featu
 - 📁 **Recent Search History**: Shows last 5 unique search queries as clickable tags.
 - ❤️ **Favorites**: Mark/unmark images as favorite and view them on a dedicated Favorites screen.
 - 🔃 **Offline Support**: Caches recent images using AsyncStorage for offline viewing.
-- ⚙️ **Clean Navigation**: Bottom navigation bar with Home, Search, and Favorites.
-- ✅ **Fully responsive**: Works well on Android and iOS via Expo.
+- 🧭 **Drawer + Bottom Tab Navigation**: Both navigators are integrated and fully in sync.
+- 👤 **User Profile**:
+  - Users can enter and edit their name, email, and bio.
+  - Details are stored using AsyncStorage and persist across sessions.
+- ✅ **Fully Responsive**: Works seamlessly on both Android and iOS using Expo.
 
 ---
 
-## 📂 Folder Structure
+## 🗂️ Folder Structure
 
 ```
 /ImageGalleryApp
 │
-├── /assets             # App assets (icons, etc.)
-├── /screens            # Contains HomeScreen, SearchScreen, FavoritesScreen
-├── App.js              # Main entry point
-├── app.json            # Expo config
-├── package.json        # Dependencies & scripts
-└── README.md           # This file
+├── /assets                 
+├── /components              
+├── /navigation              # Drawer and Bottom Tab Navigation setup
+├── /screens                 # HomeScreen, SearchScreen, FavoritesScreen, ProfileScreen
+├── App.js                   
+├── app.json                
+├── package.json            
+└── README.md               
 ```
 
 ---
@@ -52,7 +57,8 @@ npm install
 npx expo start
 ```
 
-> 📱 Use the Expo Go app on your phone to scan the QR code and run the app or type w in terminal to run in local browser.
+> 📱 Use the **Expo Go** app on your phone to scan the QR code and run the app  
+> 🧪 Or type `w` in the terminal to open in your browser
 
 ---
 
@@ -63,23 +69,26 @@ npx expo start
 - **Flickr API** (REST)
 - **AsyncStorage**
 - **Axios**
-- **React Navigation**
+- **React Navigation (Drawer & Tabs)**
 - **react-native-vector-icons**
 
 ---
 
 ## 📱 Screenshots
 
-# Home page
+### 🏠 Home Page
 ![image](https://github.com/user-attachments/assets/29e2f562-ba85-495b-a3f0-504523ecfcfc)
 
-# Search Page
+### 🔍 Search Page
 ![image](https://github.com/user-attachments/assets/4519d466-68f1-4528-8323-37542e1ae362)
 
-# Favorites Page
+### ❤️ Favorites Page
 ![image](https://github.com/user-attachments/assets/a80b6052-b369-41df-8889-d752be593013)
 
+### 👤 Profile Page
+![image](https://github.com/user-attachments/assets/1e5fe34c-db26-421b-930d-4b6bea4f33a9)
+)
 
 ---
 
-> Built with ❤️ by Kamlesh Bera
+> Built with ❤️ by **Kamlesh Bera**
